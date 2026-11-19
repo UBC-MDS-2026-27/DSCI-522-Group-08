@@ -40,7 +40,7 @@ Rendering runs the whole analysis from scratch. It downloads the data again from
 
 ## Dependencies
 1. [uv](https://docs.astral.sh/uv/) (version 0.12 or higher)
-2. [Quarto](https://quarto.org/) (version 1.8 or higher)
+2. [Quarto](https://quarto.org/) (version 1.10.18 or higher)
 3. Python 3.14 (installed automatically by `uv sync`) and the packages listed in [`pyproject.toml`](pyproject.toml)(exact versions are locked in [`uv.lock`](uv.lock))
 
 ## AI use statement
