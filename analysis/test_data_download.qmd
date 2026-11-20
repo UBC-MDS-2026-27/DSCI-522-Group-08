@@ -1,0 +1,31 @@
+```{python}
+import requests
+import zipfile
+import io
+from pathlib import Path
+
+# Download the Cleveland heart disease dataset from UCI
+url = "https://archive.ics.uci.edu/static/public/45/heart+disease.zip"
+response = requests.get(url)
+response.raise_for_status()
+
+# Create folders if needed
+raw_dir = Path("../data/raw")
+processed_dir = Path("../data/processed")
+
+raw_dir.mkdir(parents=True, exist_ok=True)
+processed_dir.mkdir(parents=True, exist_ok=True)
+
+# Extract the files without overwriting existing datasets
+with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+    for filename, destination in [
+        ("cleveland.data", raw_dir),
+        ("processed.cleveland.data", processed_dir),
+    ]:
+        target = destination / filename
+        if not target.exists():
+            target.write_bytes(z.read(filename))
+
+print("Dataset files are available!")
+```
+
