@@ -6,7 +6,7 @@ import altair as alt
 cols = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
         "thalach", "exang", "oldpeak", "slope", "ca", "thal", "num"]
 
-df = pd.read_csv("processed.cleveland.data", header=None, names=cols, na_values="?")
+df = pd.read_csv("DSCI-522-Group-08-Heart-Disease-Prediction/data/processed/processed.cleveland.data", header=None, names=cols, na_values="?")
 
 df
 
@@ -15,10 +15,6 @@ df
 ```{python}
 #Class propotions for binary class
 df['target'] =(df['num']>0).astype(int)
-#Class propriotions for multiclass
-class_frequencies = df['target'].value_counts(normalize=True)
-class_frequencies.rename("training_proportion").to_frame()
-
 ```
 
 ```{python}
@@ -26,10 +22,25 @@ from sklearn.model_selection import train_test_split
 
 
 #Splitting training and test dataset
-train_data, test_data = train_test_split(df, test_size = 0.2, random_state = 123)
-
+train_data, test_data = train_test_split(df, test_size = 0.2, random_state = 123, stratify=df["target"])
 
 ```
+
+
+```{python}
+
+# Class proportions in training data
+class_frequencies = train_data["target"].value_counts(normalize=True)
+
+class_frequencies.rename("training_proportion").to_frame()
+```
+
+
+```{python}
+print(train_data["target"].value_counts(normalize=True))
+print(test_data["target"].value_counts(normalize=True))
+```
+
 
 ```{python}
 
@@ -97,8 +108,9 @@ from sklearn.pipeline import make_pipeline
 
 ```{python}
 #Building the transformers
-numeric_transformer_cont = make_pipeline(StandardScaler(), SimpleImputer(strategy="median"))
-numeric_transformer_discrete = make_pipeline(StandardScaler(), SimpleImputer(strategy="most_frequent"))
+numeric_transformer_cont = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+numeric_transformer_discrete = make_pipeline(SimpleImputer(strategy="most_frequent"), StandardScaler())
+categorical_transformer = make_pipeline(SimpleImputer(strategy="most_frequent"),OneHotEncoder(handle_unknown="ignore"))
 binary_transformer = OneHotEncoder(drop="if_binary", dtype=int)
 
 slope_level = [ 1,2,3]
@@ -106,14 +118,11 @@ ordinal_transformer =OrdinalEncoder(categories = [slope_level])
 
 
 #Separating the features
-numeric_features_cont = ["age","cp","trestbps", "chol", "restecg",
-        "thalach", "oldpeak", "thal"]
+numeric_features_cont = ["age", "trestbps", "chol", "thalach", "oldpeak"]
 numeric_features_discrete =["ca"]
-
+categorical_features = ["cp", "restecg", "thal"]
 binary_features = ["sex","fbs","exang"]
-
 ordinal_features = ["slope"]
-
 
 ```
 
@@ -123,10 +132,11 @@ ordinal_features = ["slope"]
 from sklearn.compose import make_column_transformer
 
 preprocessor = make_column_transformer(
-(numeric_transformer_cont, numeric_features_cont),
-(numeric_transformer_discrete, numeric_features_discrete),
-(ordinal_transformer, ordinal_features),
-(binary_transformer, binary_features),
+    (numeric_transformer_cont, numeric_features_cont),
+    (numeric_transformer_discrete, numeric_features_discrete),
+    (categorical_transformer, categorical_features),
+    (ordinal_transformer, ordinal_features),
+    (binary_transformer, binary_features)
 )
 
 ```
@@ -226,10 +236,12 @@ best_model.fit(X_train,y_train)
 
 
 ```{python}
+from sklearn.metrics import accuracy_score, recall_score
+
+y_pred = best_model.predict(X_test)
+
+print("Test accuracy:", accuracy_score(y_test, y_pred))
+print("Test recall:", recall_score(y_test, y_pred))
 
 ```
 
-
-```{python}
-
-```
