@@ -1,3 +1,36 @@
+---
+title: "Predicting Heart Disease from Routine Clinical Measurements"
+author: "Yuhao Gao, Sarika Tasnim, Christa Ingabire, Nassiba Taib"
+date: "November 21, 2026"
+format:
+    html:
+        toc: true
+        embed-resources: true
+jupyter: python3
+---
+
+## Summary
+
+In this project, we explored whether clinical measurements such as age, blood pressure, and cholesterol levels could be used to predict the presence of heart disease. Using the Cleveland Heart Disease dataset from the UCI Machine Learning Repository, we compared three classification models: a dummy classifier, logistic regression, and a support vector classifier. We selected logistic regression as our final model, which achieved an accuracy of 80.3% and a recall of 71.4% on the test set. Although the model correctly classified most patients, it still missed approximately three out of ten patients who had heart disease. This is an important limitation because failing to identify patients with heart disease could have serious consequences in a healthcare setting. Our findings suggest that clinical measurements can provide useful information for predicting heart disease, but further testing on larger and more diverse datasets would be needed before considering the model for clinical use.
+
+## Introduction
+
+Cardiovascular disease (CVDs) are a group of disorders of the heart and blood vessels, and the leading cause of death globally. According to the World Health Organization, CVDs are responsible for approximately 19.8 million deaths in 2022, which is about 32% of all deaths globally (World Health Organization 2025). One of the most common forms of CVDs is coronary heart disease, which develops when arteries that supplies blood to the heart muscles become narrowed, reducing blood flow to the heart and can cause a heart attack. 
+
+Diagosing coronary heart disease with certainty requires medical procedures such as angiography which is an expensive and invasive procedure in which dye is injected into the blood vessels and imaged with X-rays. This captured our interest in whether measurements that are commonly collected in routine medical examinations, such as age, bloop pressure, cholesterol, could help to reliably predict who is likely to have heart disease. 
+
+In this project, we ask the following question: **Can routine clinical measurements be used to predict whether a patient has heart disease?**
+
+To answer this question, we use the Heart Disease data set (Janosi et al. 1989), sourced from the UCI Machine Learning Repository. We use the subset collected at the Cleveland Clinic Foundation, which was originally analyzed by Detrano et al. (1989). Each row represents one patient, with 13 clinical measurements including age, sex, chest pain type, resting blood pressure, serum cholesterol, fasting blood sugar, resting electrocardiogram results, maximum heart rate achieved during exercise, and whether exercise caused chest pain and a recorded diagnosis. The original diagnosis ranges from 0 (no diagnosis) to 4 but for our analysis, we grouped values of 1 through 4 together to indicate the presence of heart disease, whiole 0 indicates its absence. This allows us to approach the problem as a binary classification problem. 
+
+
+## Methods
+
+### Data
+
+We used the Cleaveland data from the UCI Machine Learning Repository. Since the dataset does not include column names, we added them based on the documentation provided by UCI, and missing values (recordered as question marks) were read in as missing. The original dataset records heart disease diagnoses using values from 0 to 4. Since our goal is to predict whether a patient has heart disease rather than how severe it is, we created a binary target variable. Patients with a value of 0 were classified as not having heart disease, while values from 1 to 4 were grouped together to indicate its presence.
+
+
 ```{python}
 import pandas as pd
 import altair as alt
@@ -9,7 +42,6 @@ cols = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
 df = pd.read_csv("DSCI-522-Group-08-Heart-Disease-Prediction/data/processed/processed.cleveland.data", header=None, names=cols, na_values="?")
 
 df
-
 ```
 
 ```{python}
@@ -17,25 +49,35 @@ df
 df['target'] =(df['num']>0).astype(int)
 ```
 
+
+Before exploring the data, we split it into a training set containing 80% of the patients and a test dataset containing the remaining. We did this first to make sure that information from the test set would not influence our aanalysis while building the model. 
+
+We used stratified sampling to keep the proportion of patients with and withouth a heart disease similar in both sets. This is important because we want both groups to be represented when evaluating the model. We also set a random seed of 123 so that we can reproduce the same split when running the analysis again.
+
+We used the training data for our exploratory analysis and the model development, keeping the test set separate for evaluating the final model. 
+
 ```{python}
 from sklearn.model_selection import train_test_split
 
-
 #Splitting training and test dataset
 train_data, test_data = train_test_split(df, test_size = 0.2, random_state = 123, stratify=df["target"])
-
 ```
+
+### Exploratory data analysis
+ 
+We started by exploring the training data to better understand the patients and the clinical measurements available. First, we checked the proportions of patients with and without heart disease to see whether one class was much more common than the other. As shown in Table 1, the two groups were fairly balanced, which makes accuracy a more useful measure of model performance.
+
+We also examined the data types and missing values, and created visualizations to explore how different clinical measurements relate to the presence of heart disease. These included age, cholesterol, blood pressure, maximum heart rate, and other measurements recorded for each patient. We only used the training data for these visualizations, so that the test data would remain separate from our analysis.
 
 
 ```{python}
-
 # Class proportions in training data
 class_frequencies = train_data["target"].value_counts(normalize=True)
 
 class_frequencies.rename("training_proportion").to_frame()
 ```
 
-
+Table 1: Proportion of patients with and without heart disease in the training set.
 ```{python}
 print(train_data["target"].value_counts(normalize=True))
 print(test_data["target"].value_counts(normalize=True))
@@ -91,7 +133,15 @@ plot11 = alt.Chart(train_data).mark_bar().encode(x = 'ca', y = 'target')
 
 ```
 
+Figures 1 and 2: Relationship between each clinical measurement and the presence of heart disease in the training set.
+ 
+<1-2 sentences on what the plots show, e.g., which measurements look different between patients with and without heart disease.>
 
+
+### Preprocessing
+
+Before training the models, we needed to prepare the data because the clinical measurements are not all recorded in the same way. For numerical measurements such as age, cholesterol, and blood pressure, we filled missing values using the median and standardized the values so that differences in their scales would not affect the models. For the number of major vessels, we replaced missing values with the most common value and then was standardized so that they are on the same scale. We used one-hot encoding for categorical measurements such as chest pain type and resting electrocardiogram results, meaning each category became its own yes/no column. All of these steps were combined with the model is one pipeline so that they were learned from just the training data.
+ 
 ```{python}
 
 #Loading the library
@@ -154,9 +204,22 @@ index=X_train.index,
 n_new_cols = transformed_df.shape[1] - X_train.shape[1]
 
 transformed_df
-
 ```
 
+### Model selection
+ 
+We compared three classification models to see how well the clinical measurements could predict the presence of heart disease. We started with a dummy classifier, which always predicts the most common class. This gave us a baseline to compare against, since a useful model should perform better than simply predicting the majority class.
+
+We then tested logistic regression and a support vector classifier (SVC). Logistic regression uses the clinical measurements to estimate the probability of a patient having heart disease, while SVC attempts to separate patients with and without heart disease based on their measurements.
+
+To compare the models, we used five-fold cross-validation on the training data with scikit-learn (Pedregosa et al. 2011). This means dividing the training data into five parts, training on four parts, and evaluating on the remaining part. We repeated this process so that each part was used for validation once. This helped us compare the models without using the test set during model selection.
+
+
+### Evaluation metrics
+
+We used accuracy and recall to evaluate the models. Accuracy measures the proportion of patients the model classified correctly, whether they had heart disease or not. Since our dataset has a fairly balanced number of patients in both classes, accuracy provides a useful overall measure of performance.
+
+However, accuracy alone does not tell us how well the model identifies patients who actually have heart disease. For this reason, we also looked at recall, which measures the proportion of patients with heart disease that the model correctly identifies. We considered recall important because missing a patient with heart disease could have more serious consequences than incorrectly identifying someone as having the disease
 
 ```{python}
 #Building model using dummy classifier
@@ -175,7 +238,6 @@ cross_val_results['dummy'] = pd.DataFrame(cross_validate(dc, X_train, y_train,
 
 # Show the train and validation scores
 cross_val_results['dummy']
-
 ```
 
 
@@ -193,7 +255,6 @@ cross_val_results['logreg'] = pd.DataFrame(cross_validate(logreg, X_train, y_tra
 
 # Show the train and validation scores
 cross_val_results['logreg'] 
-
 ```
 
 ```{python}
@@ -212,6 +273,11 @@ cross_val_results['svc']
 
 ```
 
+
+## Results
+ 
+We compared the performance of the dummy classifier, logistic regression, and support vector classifier using cross-validation. Table 2 shows the average accuracy and recall scores for each model, along with their standard deviations. We used these results to see whether the models performed better than the baseline and to compare how well they identified patients with heart disease.
+
 ```{python}
 #Combining the cross validation results of three models
 pd.concat(
@@ -224,6 +290,10 @@ pd.concat(
 )
 
 ```
+
+Table 2: Mean and standard deviation of cross-validation accuracy and recall for the dummy classifier, logistic regression and SVC on the training set.
+ 
+We selected logistic regression as our final model for evaluation on the test set. In addition to its predictive performance, logistic regression is relatively straightforward to interpret, making it a useful choice for understanding how clinical measurements relate to the predicted outcome.
 
 ```{python}
 #Choosing the best model
@@ -242,6 +312,31 @@ y_pred = best_model.predict(X_test)
 
 print("Test accuracy:", accuracy_score(y_test, y_pred))
 print("Test recall:", recall_score(y_test, y_pred))
-
 ```
 
+After selecting logistic regression, we trained the model on the full training set and evaluated it using the test set. The model achieved an accuracy of 80.3%, meaning it correctly classified approximately four out of five patients. Its recall was 71.4%, meaning it correctly identified about seven out of ten patients who had heart disease.
+
+Although the model performed reasonably well overall, the recall score shows that some patients with heart disease were incorrectly classified as not having it. This is an important limitation, especially when considering the potential use of the model in a healthcare setting.
+
+
+## Discussion
+ 
+Our goal was to see whether clinical measurements could be used to predict the presence of heart disease. Based on our results, logistic regression showed that these measurements contain useful information for distinguishing between patients with and without heart disease. The model achieved an accuracy of 80.3% on the test set, suggesting that it was able to classify most patients correctly.
+
+However, the recall score of 71.4% is important to consider. Although the model performed reasonably well overall, it still failed to identify approximately three out of ten patients who had heart disease. In a healthcare setting, this would be a concern because patients who need further medical attention could be incorrectly classified as not having the disease. This shows why looking at accuracy alone would not give us a complete understanding of the model's performance.
+
+There are also limitations to our analysis. The Cleveland dataset is relatively small, with just over 300 patient records, which makes it difficult to know how well the model would perform on a larger and more diverse population. We also only compared three classification models, so it is possible that other approaches could produce different results. In addition, the dataset does not necessarily represent patients in other healthcare settings.
+
+For future work, we could explore additional models and investigate whether adjusting the classification threshold would improve recall. We could also evaluate the model using data from a different patient population to better understand how well it generalizes. Overall, our findings suggest that clinical measurements can be useful for predicting heart disease, but more testing would be needed before a model like this could be considered for use in medical decision-making.
+
+ 
+## References
+ 
+Detrano, Robert, Andras Janosi, Walter Steinbrunn, Matthias Pfisterer, Johann-Jakob Schmid, Sarbjit Sandhu, Kern H. Guppy, Stella Lee, and Victor Froelicher. 1989. "International Application of a New Probability Algorithm for the Diagnosis of Coronary Artery Disease." *The American Journal of Cardiology* 64 (5): 304–10. <https://doi.org/10.1016/0002-9149(89)90524-9>.
+ 
+Janosi, Andras, William Steinbrunn, Matthias Pfisterer, and Robert Detrano. 1989. "Heart Disease." UCI Machine Learning Repository. <https://doi.org/10.24432/C52P4X>.
+ 
+Pedregosa, Fabian, Gaël Varoquaux, Alexandre Gramfort, Vincent Michel, Bertrand Thirion, Olivier Grisel, Mathieu Blondel, et al. 2011. "Scikit-learn: Machine Learning in Python." *Journal of Machine Learning Research* 12: 2825–30.
+ 
+World Health Organization. 2025. "Cardiovascular Diseases (CVDs)." Fact sheet, July 31, 2025. <https://www.who.int/news-room/fact-sheets/detail/cardiovascular-diseases-(cvds)>.
+ 
