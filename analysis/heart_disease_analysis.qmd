@@ -1,0 +1,235 @@
+```{python}
+import pandas as pd
+import altair as alt
+
+#Loading the dataset
+cols = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
+        "thalach", "exang", "oldpeak", "slope", "ca", "thal", "num"]
+
+df = pd.read_csv("processed.cleveland.data", header=None, names=cols, na_values="?")
+
+df
+
+```
+
+```{python}
+#Class propotions for binary class
+df['target'] =(df['num']>0).astype(int)
+#Class propriotions for multiclass
+class_frequencies = df['target'].value_counts(normalize=True)
+class_frequencies.rename("training_proportion").to_frame()
+
+```
+
+```{python}
+from sklearn.model_selection import train_test_split
+
+
+#Splitting training and test dataset
+train_data, test_data = train_test_split(df, test_size = 0.2, random_state = 123)
+
+
+```
+
+```{python}
+
+#Splitting the training features and target
+X_train = train_data.drop(columns=["num","target"])
+y_train = train_data["target"]
+
+#Splitting the test features and targets
+X_test = test_data.drop(columns=["num","target"])
+y_test = test_data["target"]
+
+```
+
+```{python}
+# Training data information to know non-null counts and data types
+train_data.info()
+
+```
+
+
+```{python}
+plot1 = alt.Chart(train_data).mark_bar().encode(x = 'sex', y = 'target')
+plot2 = alt.Chart(train_data).mark_bar().encode(x = 'age', y = 'target')
+plot3 = alt.Chart(train_data).mark_bar().encode(x = 'cp', y = 'target')
+plot4 = alt.Chart(train_data).mark_bar().encode(x = 'trestbps', y = 'target')
+plot5 = alt.Chart(train_data).mark_bar().encode(x = 'chol', y = 'target')
+plot6 = alt.Chart(train_data).mark_bar().encode(x = 'fbs', y = 'target')
+
+
+
+(plot1 | plot2 | plot3) & (plot4 | plot5 | plot6)
+
+```
+
+
+```{python}
+plot6 = alt.Chart(train_data).mark_bar().encode(x = 'thalach', y = 'target')
+plot7 = alt.Chart(train_data).mark_bar().encode(x = 'restecg', y = 'target')
+plot8 = alt.Chart(train_data).mark_bar().encode(x = 'exang', y = 'target')
+plot9 = alt.Chart(train_data).mark_bar().encode(x = 'oldpeak', y = 'target')
+plot10 = alt.Chart(train_data).mark_bar().encode(x = 'slope', y = 'target')
+plot11 = alt.Chart(train_data).mark_bar().encode(x = 'ca', y = 'target')
+
+
+
+(plot6 | plot7 | plot8) & (plot9 |plot10 |plot11)
+
+
+```
+
+
+```{python}
+
+#Loading the library
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.pipeline import make_pipeline
+
+
+```
+
+
+```{python}
+#Building the transformers
+numeric_transformer_cont = make_pipeline(StandardScaler(), SimpleImputer(strategy="median"))
+numeric_transformer_discrete = make_pipeline(StandardScaler(), SimpleImputer(strategy="most_frequent"))
+binary_transformer = OneHotEncoder(drop="if_binary", dtype=int)
+
+slope_level = [ 1,2,3]
+ordinal_transformer =OrdinalEncoder(categories = [slope_level])
+
+
+#Separating the features
+numeric_features_cont = ["age","cp","trestbps", "chol", "restecg",
+        "thalach", "oldpeak", "thal"]
+numeric_features_discrete =["ca"]
+
+binary_features = ["sex","fbs","exang"]
+
+ordinal_features = ["slope"]
+
+
+```
+
+
+```{python}
+
+from sklearn.compose import make_column_transformer
+
+preprocessor = make_column_transformer(
+(numeric_transformer_cont, numeric_features_cont),
+(numeric_transformer_discrete, numeric_features_discrete),
+(ordinal_transformer, ordinal_features),
+(binary_transformer, binary_features),
+)
+
+```
+
+
+```{python}
+
+trans_df = preprocessor.fit_transform(X_train)
+
+transformed_df = pd.DataFrame(
+trans_df,
+columns=preprocessor.get_feature_names_out(),
+index=X_train.index,
+)
+n_new_cols = transformed_df.shape[1] - X_train.shape[1]
+
+transformed_df
+
+```
+
+
+```{python}
+#Building model using dummy classifier
+from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import cross_validate
+
+#Since class proprtions is balanced, we choose accuracy as our classification metrics
+classification_metrics = ["accuracy","recall"]
+# The dummy model
+dc = DummyClassifier()
+# The mean and std of the cross validated scores for all metrics as a dataframe
+cross_val_results = {}
+cross_val_results['dummy'] = pd.DataFrame(cross_validate(dc, X_train, y_train,
+    scoring= classification_metrics,cv=5,
+    return_train_score=True,)).agg(['mean', 'std']).round(3).T
+
+# Show the train and validation scores
+cross_val_results['dummy']
+
+```
+
+
+```{python}
+
+#Building model using Logistic regression
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+
+# The logreg model pipeline
+logreg = make_pipeline(preprocessor, LogisticRegression(max_iter=1000, random_state = 123))
+
+# The mean and std of the cross validated scores for all metrics as a dataframe
+cross_val_results['logreg'] = pd.DataFrame(cross_validate(logreg, X_train, y_train, scoring=classification_metrics, return_train_score = True)).agg(['mean', 'std']).round(3).T
+
+# Show the train and validation scores
+cross_val_results['logreg'] 
+
+```
+
+```{python}
+#Building model using SVC
+from sklearn.svm import SVC
+
+
+# The svc model pipeline
+svc = make_pipeline(preprocessor, SVC())
+
+# The mean and std of the cross validated scores for all metrics as a dataframe
+cross_val_results['svc'] = pd.DataFrame(cross_validate(svc, X_train, y_train, scoring=classification_metrics, return_train_score =True)).agg(['mean', 'std']).round(3).T
+
+# Show the train and validation scores
+cross_val_results['svc'] 
+
+```
+
+```{python}
+#Combining the cross validation results of three models
+pd.concat(
+    {
+        "Dummy Classifier":cross_val_results["dummy"],
+        "Logistic Regression": cross_val_results["logreg"],
+        "SVC": cross_val_results["svc"]
+    },
+    axis=1
+)
+
+```
+
+```{python}
+#Choosing the best model
+best_model = logreg
+
+#training the best model
+best_model.fit(X_train,y_train)
+
+```
+
+
+```{python}
+
+```
+
+
+```{python}
+
+```
