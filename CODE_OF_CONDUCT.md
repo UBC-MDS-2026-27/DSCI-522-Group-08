@@ -34,7 +34,7 @@ This Code of Conduct applies both within project spaces and in public spaces whe
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behaviour may be reported to the DSCI 522 Group 08 project team at (discuss with team members to add a project email address). The team will review reported concerns respectfully and confidentially and determine appropriate actions based on the circumstances.
+Instances of abusive, harassing, or otherwise unacceptable behaviour may be reported to the DSCI 522 Group 08 project team at ntaib91@student.ubc.ca. The team will review reported concerns respectfully and confidentially and determine appropriate actions based on the circumstances.
 
 Depending on the severity of the behaviour, consequences may include a warning, removal of inappropriate contributions, or referral to the DSCI 522 teaching team for further action.
 
