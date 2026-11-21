@@ -76,7 +76,7 @@ Our team used generative AI tools (Claude and ChatGPT) to troubleshoot setup err
 
 ## License
 
-The Heart Disease Predictor report contained in this repository is licensed under the [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+The Heart Disease Predictor report contained in this repository is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 The software code in this repository is licensed under the MIT License.
 
