@@ -16,7 +16,7 @@ We use the Cleveland Clinic Foundation subset, where each row represents one pat
 
 ## Report
 
-The rendered analysis report is available [here](https://ubc-mds-2026-27.github.io/DSCI-522-Group-08/analysis/heart_disease_analysis.html).
+The rendered analysis report is available [here](https://ubc-mds-2026-27.github.io/DSCI-522-Group-08-Heart-Disease-Prediction/analysis/heart_disease_analysis.html).
 
 ## Usage
 
@@ -32,7 +32,7 @@ Open a terminal and run:
 
 ```bash
 git clone https://github.com/UBC-MDS-2026-27/DSCI-522-Group-08-Heart-Disease-Prediction.git
-cd DSCI-522-Group-08
+cd DSCI-522-Group-08-Heart-Disease-Prediction
 ```
 
 ### 3. Set up the Python environment
@@ -76,7 +76,7 @@ Our team used generative AI tools (Claude and ChatGPT) to troubleshoot setup err
 
 ## License
 
-The Heart Disease Predictor report contained in this repository is licensed under the [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+The Heart Disease Predictor report contained in this repository is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 The software code in this repository is licensed under the MIT License.
 
